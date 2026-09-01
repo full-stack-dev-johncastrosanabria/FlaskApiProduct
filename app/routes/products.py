@@ -1,8 +1,9 @@
 from flask import Blueprint, request
-from app.models import Product
-from app.utils.validators import validate_product_data
-from app.utils.responses import success_response, error_response
+
 from app.database import db
+from app.models import Product
+from app.utils.responses import error_response, success_response
+from app.utils.validators import validate_product_data
 
 bp = Blueprint('products', __name__, url_prefix='/api/products')
 
@@ -115,3 +116,44 @@ def delete_product(product_id):
     except Exception as e:
         db.session.rollback()
         return error_response(f'Error al eliminar producto: {str(e)}', 500)
+
+
+@bp.route('/low-stock', methods=['GET'])
+def get_low_stock_products():
+    """
+    Obtiene productos con stock menor o igual a un umbral.
+    Parámetros:
+        threshold (int, default=10): umbral de stock (inclusivo).
+    Respuesta:
+        200 con lista de productos (id, name, sku, stock, restock_value).
+        400 si threshold no es entero o es negativo.
+    Orden: stock ascendente.
+    """
+    threshold_value = request.args.get('threshold')
+    if threshold_value is None:
+        threshold = 10
+    else:
+        try:
+            threshold = int(threshold_value)
+        except (TypeError, ValueError):
+            return error_response('El parámetro threshold debe ser un entero', 400)
+
+    if threshold < 0:
+        return error_response('El parámetro threshold no puede ser negativo', 400)
+
+    # Consultar productos con stock <= threshold
+    products = Product.query.filter(Product.stock <= threshold).order_by(Product.stock.asc()).all()
+
+    # Construir respuesta con los campos requeridos
+    result = []
+    for p in products:
+        restock_value = float(p.cost) * (threshold - p.stock) if p.cost is not None else 0.0
+        result.append({
+            'id': p.id,
+            'name': p.name,
+            'sku': p.sku,
+            'stock': p.stock,
+            'restock_value': restock_value
+        })
+
+    return success_response(data=result, count=len(result))
