@@ -4,9 +4,9 @@ from datetime import datetime, timezone
 
 class Product(db.Model):
     """Modelo de Producto con SQLAlchemy"""
-    
+
     __tablename__ = 'products'
-    
+
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text)
@@ -19,16 +19,16 @@ class Product(db.Model):
     views = db.Column(db.Integer, default=0)  # Número de vistas
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, onupdate=lambda: datetime.now(timezone.utc))
-    
+
     # Relación con categoría
     category = db.relationship('Category', backref='products')
-    
+
     # Relación con items de orden
     order_items = db.relationship('OrderItem', backref='product', lazy=True)
-    
+
     def __repr__(self):
         return f'<Product {self.name}>'
-    
+
     def to_dict(self):
         """Convierte el objeto a diccionario"""
         return {
@@ -46,37 +46,37 @@ class Product(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
-    
+
     @classmethod
     def get_all(cls, filters=None):
         """Obtiene todos los productos con filtros opcionales"""
         query = cls.query
-        
+
         if filters:
             if 'min_price' in filters and filters['min_price'] is not None:
                 query = query.filter(cls.price >= filters['min_price'])
-            
+
             if 'max_price' in filters and filters['max_price'] is not None:
                 query = query.filter(cls.price <= filters['max_price'])
-            
+
             if 'category' in filters and filters['category']:
                 query = query.join(cls.category).filter(
-                    db.func.lower(Category.name) == filters['category'].lower()
+                    db.func.lower(db.func.cast(Category.name, db.String)) == filters['category'].lower()
                 )
-        
+
         return query.all()
-    
+
     @classmethod
     def get_by_id(cls, product_id):
         """Obtiene un producto por ID"""
         return cls.query.get(product_id)
-    
+
     def save(self):
         """Guarda el producto en la base de datos"""
         db.session.add(self)
         db.session.commit()
         return self
-    
+
     def update(self, **kwargs):
         """Actualiza los campos del producto"""
         for key, value in kwargs.items():
@@ -85,7 +85,7 @@ class Product(db.Model):
         self.updated_at = datetime.now(timezone.utc)
         db.session.commit()
         return self
-    
+
     def delete(self):
         """Elimina el producto de la base de datos"""
         db.session.delete(self)
