@@ -2,7 +2,7 @@
 
 API REST profesional desarrollada con Flask, SQLite, análisis de datos avanzado, dashboard interactivo y chatbot de IA con base de conocimientos.
 
-**Estado:** ✅ 100% COMPLETADO Y PROBADO  
+**Estado:** Proyecto de portafolio. Consulta y ejecuta las comprobaciones documentadas para evaluar tu entorno.  
 **Versión:** 4.0.0 (TypeScript + Análisis Avanzado + IA)  
 **Última actualización:** Abril 24, 2026
 
